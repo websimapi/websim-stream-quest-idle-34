@@ -197,10 +197,16 @@ export function setupHostUI(uiManager) {
         );
     };
 
-    // Immediately refresh the player list now that host UI callbacks are wired,
-    // so auto-connected hosts don't need to click "Connect" twice.
+    // Immediately refresh the player list once the network layer has finished initializing,
+    // so you don't need to click "Connect" to see linked data.
     if (typeof network.refreshPlayerList === 'function') {
-        network.refreshPlayerList();
+        if (network.ready && typeof network.ready.then === 'function') {
+            network.ready.then(() => {
+                network.refreshPlayerList();
+            });
+        } else {
+            network.refreshPlayerList();
+        }
     }
 }
 
