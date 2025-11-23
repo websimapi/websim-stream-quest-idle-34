@@ -84,6 +84,8 @@ export function setupHostUI(uiManager) {
             hostUserDropdown.style.display = isOpen ? 'none' : 'block';
             if (!isOpen) {
                 uiManager.refreshHostUserMenu();
+                // Force a refresh when opening the menu to ensure it's up to date
+                network.refreshPlayerList();
             }
         });
 
@@ -197,15 +199,31 @@ export function setupHostUI(uiManager) {
         );
     };
 
-    // Immediately refresh the player list once the network layer has finished initializing,
-    // so you don't need to click "Connect" to see linked data.
+    // Trigger Initial Updates immediately to sync with existing network state
+    // 1. Populate presence if already available on the room
+    if (network.room && network.room.peers) {
+        const initialPeers = Object.entries(network.room.peers).map(([id, info]) => ({
+            id,
+            username: info.username
+        }));
+        // Fire manual presence update to render lists immediately
+        if (network.onPresenceUpdate) {
+            network.onPresenceUpdate(initialPeers);
+        }
+    }
+
+    // 2. Trigger player list refresh.
+    // We use the promise approach if initialization is pending, but ALSO try immediately
+    // to catch cases where initialization was fast or synchronous.
     if (typeof network.refreshPlayerList === 'function') {
+        // Immediate attempt
+        network.refreshPlayerList();
+
+        // Promise-based attempt (for post-init refresh)
         if (network.ready && typeof network.ready.then === 'function') {
             network.ready.then(() => {
                 network.refreshPlayerList();
             });
-        } else {
-            network.refreshPlayerList();
         }
     }
 }

@@ -75,6 +75,11 @@ export function installHostMessageHandler(networkManager) {
                     player.linkedWebsimId = senderId;
                     await savePlayer(player.twitchId, player);
                     appendHostLog(`Sync updated link for ${player.username} to WebSim client ${senderId}.`);
+                    
+                    // Refresh host UI to show the updated link status
+                    if (typeof networkManager.refreshPlayerList === 'function') {
+                        networkManager.refreshPlayerList();
+                    }
                 }
 
                 room.send({
